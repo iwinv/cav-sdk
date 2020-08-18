@@ -43,13 +43,25 @@ class Authentication
 	 */
 	public static $blackUrl ;
 	/**
-	 * @var string 다운로드 토큰 요청주소
+	 * @var string 인코딩 설정 주소
 	 */
-	public static $downloadTokenUrl ;
+	public static $encodeUrl ;
 	/**
-	 * @var string 다운로드 주소
+	 * @var string 워터마크 설정 주소
 	 */
-	public static $downloadUrl ;
+	public static $watermarkUrl ;
+	/**
+	 * @var string 인코딩 파일 정보 요청주소
+	 */
+	public static $encodingFilesUrl ;
+	/**
+	 * @var string 인코딩 파일 토큰 설정 주소
+	 */
+	public static $encodingTokenUrl ;
+	/**
+	 * @var string 인코딩 소스 요청주소
+	 */
+	public static $encodingVideoUrl ;
 	/**
 	 * @var string 폴더키
 	 */
@@ -83,8 +95,11 @@ class Authentication
 		self::$filesUrl = self::$apiDomain . 'files' . '/' ;
 		self::$foldersUrl = self::$apiDomain . 'folders' . '/' ;
 		self::$blackUrl = self::$apiDomain . 'black' . '/' ;
-		self::$downloadTokenUrl = self::$apiDomain . 'token' . '/' ;
-		self::$downloadUrl = self::$apiDomain . 'download' . '/' ;
+		self::$encodeUrl = self::$apiDomain . 'encode' . '/' ;
+		self::$watermarkUrl = self::$apiDomain . 'watermark' . '/' ;
+		self::$encodingFilesUrl = self::$apiDomain . 'encodefiles' . '/' ;
+		self::$encodingTokenUrl = self::$apiDomain . 'token' . '/' ;
+		self::$encodingVideoUrl = self::$apiDomain . 'video' . '/' ;
 
 		$this -> countOvertime = FALSE ;
 	}
@@ -99,6 +114,7 @@ class Authentication
 	 */
 	public static function curl ( $url , $headers , $action , $postData = array () )
 	{
+		var_dump($url);
 		$curl = curl_init () ;
 		curl_setopt ( $curl , CURLOPT_URL , $url ) ;
 		curl_setopt ( $curl , CURLOPT_HTTPHEADER , $headers ) ;
@@ -119,6 +135,10 @@ class Authentication
 		else
 			curl_setopt ( $curl , CURLOPT_CUSTOMREQUEST , $action ) ;
 		$re = curl_exec ( $curl ) ;
+
+		echo '<pre>';
+		var_dump($re);
+		echo '</pre>';
 
 		curl_close ( $curl ) ;
 		return $re ;
@@ -288,13 +308,37 @@ class Authentication
 		return $this -> returnMsg ( $re , __FUNCTION__ , $filesKey , $tag ) ;
 	}
 
+
 	/**
-	 * 다운로드 주소 요청
+	 * 파일별 토큰설정 ( 멀티 )
+	 * @param string $token 인증토큰
+	 * @param array $filesKey 파일 키 ( 멀티 )
+	 * @param string $type 공개 , 비공개 ( PUBLIC , PRIV )
+	 * @return array 결과 정보 ( RequestID : 요청번호 ; Result : 결과 메시지 )
+	 */
+	public function filesTokenUpdate ( $token = '' , $filesKeys , $type )
+	{
+		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl
+		(
+			self::$encodingTokenUrl . json_encode ( $filesKeys ) . '&type=' . strtoupper ( $type )
+				, $headers , 'PUT'
+		) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
+	}
+
+	/**
+	 * 인코딩 소스 주소 요청
 	 * @param string $token 인증토큰
 	 * @param string $filesKey 파일 키
-	 * @return array 다운로드url ( RequestID : 요청번호 ; Url : 다운로드url ; Result : 결과 메시지 )
+	 * @param string $type 플레이어 포함 , 영상소스 , 썸네일 ( video , source , thumbnail )
+	 * @return 요청 결과
 	 */
-	public function downloadTokenSelect ( $token = '' , $filesKey )
+	public function encodingVideoSelect ( $token = '' , $filesKey , $type )
 	{
 		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
 		if ( ! $_token )
@@ -304,8 +348,78 @@ class Authentication
 			return 'No files key' ;
 
 		$headers[] = 'Authorization:' . $_token ;
-		$re = self::curl ( self::$downloadTokenUrl . $filesKey , $headers , 'GET' ) ;
+		$re = self::curl ( self::$encodingVideoUrl . $filesKey . '&type=' . $type , $headers , 'GET' ) ;
 		return $this -> returnMsg ( $re , __FUNCTION__ , $filesKey ) ; // $re -> url
+	}
+
+	/**
+	 * 인코딩 목록 요청
+	 * @param string $token 인증토큰
+	 * @param string $filesKey 파일 키
+	 * @return array 인코딩 목록 정보 ( RequestID : 요청번호 ; encode : 인코딩 정보 ; Result : 결과 메시지 )
+	 */
+	public function encodingFilesSelect ( $token = '' , $filesKey )
+	{
+		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		if ( ! $filesKey )
+			return 'No files key' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$encodingFilesUrl . $filesKey , $headers , 'GET' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ , $filesKey ) ; // $re -> url
+	}
+
+	/**
+	 * 파일 인코딩 요청
+	 * @param string $token 인증토큰
+	 * @param string $fileKey 파일 키
+	 * @param array $encoding 인코딩 이름
+	 * @return array 결과 정보 ( RequestID : 요청번호 ; Result : 결과 메시지 )
+	 */
+	public function encodingFilesCreate ( $token = '' , $fileKey , $encoding , $watermark = '' , $position = '' )
+	{
+		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		if ( ! $fileKey )
+			return 'No file key' ;
+
+		if ( ! $encoding )
+			return 'No encoding' ;
+
+		if ( ! empty ( $watermark ) ^ ! empty ( $position ) )
+			return 'No watermark ^ position' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl (
+			self::$encodingFilesUrl . $fileKey , $headers , 'POST'
+				, array ( 'encoding' => json_encode ( $encoding ) , 'watermark' => $watermark , 'position' => $position )
+		) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ , $fileKey ) ; // $re -> url
+	}
+
+	/**
+	 * 인코딩 파일 삭제 요청
+	 * @param string $token 인증토큰
+	 * @param string $filesKey 파일 키
+	 * @return array 삭제 결과 ( RequestID : 요청번호 ; Result : 결과 메시지 )
+	 */
+	public function encodingFilesDelete ( $token = '' , $keys )
+	{
+		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		if ( ! $keys )
+			return 'No files key' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$encodingFilesUrl . json_encode ( $keys ) , $headers , 'DELETE' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ , $keys ) ; // $re -> url
 	}
 
 	/**
@@ -331,7 +445,7 @@ class Authentication
 			if ( $param2 )
 				array_push ( $param , $param2 ) ;
 			/**
-			 * 세 토큰로 다시 function 호출하기
+			 * 새 토큰으로 다시 function 호출하기
 			 */
 			return $this -> countOvertime ? NULL : call_user_func_array ( array ( $this , $functionName ) , $param ) ;
 		}
@@ -347,7 +461,19 @@ class Authentication
 	{
 		if ( $msg == 'InvalidToken.Expired' )
 		{
-			$reqToken = json_decode ( $this -> getToken () ) ;
+			if ( ! empty ( $reqToken ) )
+			{
+				$reqToken = json_decode ( $reqToken ) ;
+				if ( isset ( $reqToken -> Token ) )
+				{
+					$this -> token = $reqToken -> Token ;
+					return $reqToken -> Token ;
+				}
+				else
+					echo "<script>alert('인증 토큰 생성시 오류발생했습니다.');</script>" ;
+			}
+			else
+				echo "<script>alert('인증 토큰 생성시 오류발생했습니다.');</script>" ;
 			$this -> countOvertime = TRUE ;
 			return TRUE ;
 		}
@@ -398,7 +524,7 @@ class Authentication
 	/**
 	 * 블랙리스트 삭제
 	 * @param string $token 인증토큰
-	 * @param string $data 데이터
+	 * @param array $data 삭제할 블랙리스트
 	 * @return array 블랙리스트 ( RequestID : 요청번호 ; Result : 결과 메시지 )
 	 */
 	public function blackDelete ( $token = '' , $data )
@@ -412,86 +538,111 @@ class Authentication
 		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
 	}
 
-	/**
-	 * 파일별 토큰설정 ( 멀티 )
-	 * @param string $token 인증토큰
-	 * @param array $filesKey 파일 키 ( 멀티 )
-	 * @param string $type 토큰 종류
-	 * @param string $value 토큰 설정 값 ( 암호 토큰일 경우 각각 파일키로 암호화 후 )
-	 * @return array 결과
-	 */
-	public function downloadTokenUpdate ( $token = '' , $filesKeys , $type , $value )
-	{
-		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
-		if ( ! $_token )
-			return 'No token' ;
-
-		if ( $type == 'password' )
-		{
-			$enc = array () ;
-			foreach ( $filesKeys as $v )
-				array_push ( $enc , self::encrypt ( $v , $value ) ) ;
-			$value = str_replace ( '=' , '' , base64_encode ( json_encode ( $enc ) ) ) ;
-		}
 
 
-		$headers[] = 'Authorization:' . $_token ;
-		$re = self::curl
-		(
-			self::$downloadTokenUrl . json_encode ( $filesKeys ) . '&type=' . strtoupper ( $type ) . '&value=' . $value
-				, $headers , 'PUT'
-		) ;
-		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
-	}
 
 	/**
-	 * 토큰 발급
+	 * 인코딩 조회
 	 * @param string $token 인증토큰
-	 * @param string $fileKey 토큰을 생성할 파일키
-	 * @return array 결과 ( RequestID : 요청번호 ; Token : 생성된 토큰값 ; Result : 결과 메시지 )
+	 * @return array 인코딩 ( RequestID : 요청번호 ; encode : 인코딩 화질 목록  ; Result : 결과 메시지 )
 	 */
-	public function downloadTokenCreate ( $token , $fileKey )
-	{
-		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
-		if ( ! $_token )
-			return 'No token' ;
-
-		$headers[] = 'Authorization:' . $_token ;
-		$re = self::curl ( self::$downloadTokenUrl . $fileKey , $headers , 'POST' ) ;
-		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
-	}
-
-	/**
-	 * 토큰 삭제
-	 * @param string $token 인증토큰
-	 * @param string $fileKey 파일키
-	 * @param string $downloadTokens 삭제할 토큰
-	 * @return array 결과 ( RequestID : 요청번호 ; Token : 생성된 토큰값 ; Result : 결과 메시지 )
-	 */
-	public function downloadTokenDelete ( $token , $fileKey , $downloadTokens )
+	public function encodeSelect ( $token = '' )
 	{
 		$_token = $token ? $token : ( $this -> token ? $this -> token : NULL ) ;
 		if ( ! $_token )
 			return 'No token' ;
 
 		$headers[] = 'Authorization:' . $_token ;
-		$re = self::curl ( self::$downloadTokenUrl . $fileKey . '&downloadTokens=' . json_encode ( $downloadTokens ) , $headers , 'DELETE' ) ;
+		$re = self::curl ( self::$encodeUrl , $headers , 'GET' ) ;
 		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
 	}
 
-	/*
-	 * 암호 토큰을 위한 AES암호화
-	 * @param string $fileKey 파일 키
-	 * @param string 입력한 비밀번호
-	 * @return string 암호화된 비밀번호
+
+	/**
+	 * 인코딩 등록
+	 * @param string $token 인증토큰
+	 * @param string $name 별칭
+	 * @param string $width 가로픽셀
+	 * @param string $height 세로픽셀
+	 * @return array 인코딩 ( RequestID : 요청번호 ; Result : 결과 메시지 )
 	 */
-	static public function encrypt ( $fileKey , $pwd )
+	public function encodeCreate ( $token = '' , $name , $width , $height )
 	{
-		$split = str_split ( $fileKey , strlen ( $fileKey ) / 2 ) ;
+		$_token = $token ? $token : ( $this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
 
-		$key = array_shift ( $split ) ;
-		$iv = array_pop ( $split ) ;
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$encodeUrl , $headers , 'POST' , array ( 'name' => $name , 'width' => $width , 'height' => $height ) ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
+	}
 
-		return urlencode ( openssl_encrypt ( $pwd , 'AES-256-CBC' , $key , OPENSSL_RAW_DATA , $iv ) ) ;
+
+	/**
+	 * 인코딩 삭제
+	 * @param string $token 인증토큰
+	 * @param array $data 삭제할 별칭
+	 * @return array 인코딩 ( RequestID : 요청번호 ; Result : 결과 메시지 )
+	 */
+	public function encodeDelete ( $token = '' , $data )
+	{
+		$_token = $token ? $token : ( $this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$encodeUrl . '&encodes=' . json_encode ( $data )  , $headers , 'DELETE' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
+	}
+
+
+	/**
+	 * 워터마크 조회
+	 * @param string $token 인증토큰
+	 * @return array 워터마크 ( RequestID : 요청번호 ; Watermark : 워터마크 목록  ; Result : 결과 메시지 )
+	 */
+	public function watermarkSelect ( $token = '' )
+	{
+		$_token = $token ? $token : ( $this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$watermarkUrl , $headers , 'GET' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
+	}
+
+	/**
+	 * 워터마크 설정 가능한 위치 조회
+	 * @param string $token 인증토큰
+	 * @return array 워터마크 설정 가능 위치 ( RequestID : 요청번호 ; Position : 위치 목록  ; Result : 결과 메시지 )
+	 */
+	public function watermarkPosition ( $token = '' )
+	{
+		$_token = $token ? $token : ( $this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$watermarkUrl . 'position' , $headers , 'GET' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
+	}
+
+
+	/**
+	 * 워터마크 삭제
+	 * @param string $token 인증토큰
+	 * @param array $data 삭제할 별칭
+	 * @return array 워터마크 ( RequestID : 요청번호 ; Result : 결과 메시지 )
+	 */
+	public function watermarkDelete ( $token = '' , $data )
+	{
+		$_token = $token ? $token : ( $this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$watermarkUrl . '&watermarks=' . json_encode ( $data )  , $headers , 'DELETE' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ ) ;
 	}
 }

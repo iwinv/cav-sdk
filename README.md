@@ -1,13 +1,13 @@
-# CAD-API
+# CAV-API
 
-SDK for iwinv cad-api
+SDK for iwinv cav-api
 SDK를 사용하면 편리하고 안전하게 API 연결을 할 수 있습니다.
 
 ## Setting
 
 `setting.php` 파일은 기본 설정 파일입니다.
 
-* 공유 스토리지 서비스의 도메인 `setting.php`의 `apiDomain`의 값으로 설정합니다.
+* 컨텐츠 인증 VOD 서비스의 도메인 `setting.php`의 `apiDomain`의 값으로 설정합니다.
 * API 버전을 `setting.php`의 `version`의 값으로 설정합니다.
 
 * 아래 그림과 같이 **콘솔**에서 `설정관리` -> `AccessKey 관리` 에서 accesskey를 생성하며
@@ -19,12 +19,6 @@ SDK를 사용하면 편리하고 안전하게 API 연결을 할 수 있습니다
 
 <p align="center">
 <img src="./img/secret.png">
-</p>
-
-* 아래 그림과 같이 **콘솔**에서 `설정관리` -> `스토리지 키`에서 **storageKey**를 `setting.php`의 `storageKey`로 설정합니다.
-
-<p align="center">
-<img src="./img/storagekey.png">
 </p>
 
 * 아래 그림과 같이 **콘솔**에서 `파일관리` -> 해당폴더의 **folderKey**를 `setting.php`의 `folderKey`로 설정합니다.

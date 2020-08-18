@@ -16,7 +16,8 @@
 /*
  * 프레임워크 파일을 불러옵니다.
  */
-include_once '../../inc/config.inc' ;
+include_once '../inc/config.inc' ;
+
 
 $token = $_POST['token'] ;
 if ( ! $token )
@@ -26,19 +27,17 @@ $type = $_POST['type'] ;
 if ( ! $type )
 	exit ( 'No type' ) ;
 
-$value = isset ( $_POST['value'] ) ? $_POST['value'] : NULL ;
-if ( in_array ( $_POST['type'] , array ( 'count' , 'time' , 'password' ) ) && empty ( $value ) )
-	exit ( 'No token value' ) ;
-
 $filesKey = $_POST['files'] ;
 if ( ! $filesKey )
 	exit ( 'No files key' ) ;
 
 
+
+
 /*
-* 다운로드 토큰 수정 API : download token update
+* 파일 토큰 수정 API : files token update
 */
-$re = $AUTH -> downloadTokenUpdate ( $token , $filesKey , $type , $value ) ;
+$re = $AUTH -> filesTokenUpdate ( $token , $filesKey , $type ) ;
 
 if ( $re )
 	if ( isset ( $re -> Error ) )
@@ -46,8 +45,8 @@ if ( $re )
 	else if ( isset ( $re -> Result ) )
 		echo json_encode ( $re -> Result , JSON_UNESCAPED_UNICODE ) ;
 	else
-		echo 'Update download token error' ;
+		echo 'Update encoding token error' ;
 else
-	echo 'Update download token error' ;
+	echo 'Update encoding token error' ;
 exit ;
 ?>

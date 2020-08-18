@@ -40,10 +40,7 @@ include_once INC . DIRECTORY_SEPARATOR . 'header.inc' ;
 $type = array
 (
 	'PRIV' => '비공개' ,
-	'TIME' => '시간' ,
-	'COUNT' => '횟수' ,
-	'PASSWORD' => '암호' ,
-	'PUBLIC' => '무제한'
+	'PUBLIC' => '공개'
 ) ;
 
 ?>
@@ -87,11 +84,10 @@ $type = array
 					<th><input type="checkbox" name="ckbAll"></th>
 					<th>파일이름</th>
 					<th>파일 크기</th>
-					<th>토큰 타입</th>
-					<th>토큰 제한값</th>
+					<th>공개 여부</th>
 					<th>태그</th>
 					<th>생성 시간</th>
-					<th>토큰</th>
+					<th>인코딩 파일</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -103,7 +99,7 @@ $type = array
 							if ( htmlspecialchars ( $v -> name ) != $v -> name ) $v -> name = htmlspecialchars ( $v -> name ) ;
 
 							// 너무길면 줄이기
-							foreach ( array ( 'name' , 'value' , 'tag' ) as $vv )
+							foreach ( array ( 'name' , 'tag' ) as $vv )
 							{
 								if ( $vv == 'name' )
 									$name = $v -> $vv ;
@@ -118,10 +114,9 @@ $type = array
 							<td title='<?=$v -> name?>'><?=$v -> name?></td>
 							<td><?=$v -> size?></td>
 							<td><?=$type[$v -> type]?></td>
-							<td><?=$v -> value?></td>
 							<td><?=$v -> tag?></td>
 							<td><?=$v -> date_insert?></td>
-							<td><a href='token/list.php?filesKey=<?=$k?>&name=<?=$name?>'>리스트</a></td>
+							<td><a href='encoding/list.php?filesKey=<?=$k?>&name=<?=$name?>'>리스트</a></td>
 						</tr>
 						<?php endforeach ; ?>
 					<?php else : ?>
@@ -149,7 +144,7 @@ $type = array
 					</div>
 				</form>
 				<button  type="button" name="btnUpload">업로드 시작</button>
-				<progress name="progressBar" value="0" max="100"> </progress>
+				<progress name="progressBar" value="0" max="100"></progress>
 				<span class="time"></span>
 			</div>
 		</div>
@@ -176,28 +171,14 @@ $type = array
 			</div>
 		</div>
 		<div class="item">
-			<h3> 토큰 설정 : </h3>
+			<h3> 공개 여부 : </h3>
 			<div class="item_body">
-				<form name="token" action="token/setting.php" method="post">
+				<form name="token" action="encoding/setting.php" method="post">
 					<div class="radio-group">
-						<label for="count">토큰 (횟수)</label><input id="count" type="radio" name="type" value="count">
+						<label for="public">공개</label><input id="public" name="type" value="public" hidden>
 					</div>
 					<div class="radio-group">
-						<label for="time">토큰 (시간)</label><input id="time" type="radio" name="type" value="time">
-					</div>
-					<div class="radio-group">
-						<label for="password">토큰 (암호)</label><input id="password" type="radio" name="type" value="password">
-					</div>
-					<div class="radio-group">
-						<label for="priv">비공개</label><input id="priv" type="radio" name="type" value="priv">
-					</div>
-					<div class="radio-group">
-						<label for="public">무제한</label><input id="public" type="radio" name="type" value="public">
-					</div>
-
-					<div class="input-group">
-						<span></span> <input type="text" name="value" disabled>
-						<button type="button" name="tokenUpdate">수 정</button>
+						<label for="priv">비공개</label><input id="priv" name="type" value="priv" hidden>
 					</div>
 				</form>
 			</div>
@@ -216,85 +197,34 @@ $type = array
 
 $ ( document ).ready ( function () {
 
-	$('form[name=token]').find('.radio-group > input').on('click',function(){
-		var $input = $(this).parents('form').find('.input-group > input') ,
-			$span = $(this).parents('form').find('span') ;
-
-		$input.prop('disabled',false) ;
-		if ( $(this).val() == 'password' )
-		{
-			$input.prop('type','password') ;
-			$span.html('암호');
-		}
-		else if ( $(this).val() == 'count' )
-		{
-			$input.prop('type','number') ;
-			$span.html('횟수');
-		}
-		else if ( $(this).val() == 'time' )
-		{
-			$input.prop('type','number') ;
-			$span.html('시간 (분)');
-		}
-		else
-		{
-			$input.prop('disabled',true) ;
-			$span.html('');
-		}
-	});
-	$('form[name=token] > .input-group').find('input').on('keydown',function(e){
-		if ( e.keyCode == 13 )
-		{
-			e.preventDefault();
-			$('button[name=tokenUpdate]').trigger('click');
-		}
-	});
-
-	$('button[name=tokenUpdate]').on('click',function(){
-		var $form = $(this).parents('form') ,
-			$radio = $form.find('input:checked[type=radio]') ,
-			$input = $form.find('input[name=value]') ,
-			$files = $('input[name=ckbFiles]:checked') ,
-			keys = [] ,
-			data = { token : $("#token").val() } ;
-
-			if ( $files.length == 0 )
-			{
-				alert('파일을 선택 해주시기 바랍니다.');
-				return;
-			}
-			$('input[name=ckbFiles]:checked').each(function(i,e){
-				keys.push($(e).val());
-			});
-			Object.assign(data, {files:keys} );
-
-			if ( $input.prop('disabled') )
-				Object.assign(data, {type:$radio.val()}) ;
-			else
-				Object.assign(data, { type:$radio.val() , value:$input.val() }) ;
-
-			if ( data.type == undefined )
-			{
-				alert('토큰을 설정해주시기 바랍니다.');
-				return;
+	$('form[name=token]').find('.radio-group').on('click',function(e){
+		e.preventDefault();
+		var $files = $('input[name=ckbFiles]:checked'),
+			files = [];
+		if ( $files.length < 1 )
+			alert('파일을 선택해주시기 바랍니다.');
+		$files.each(function(k,v){
+			files.push($(v).val())
+		});
+		$.ajax({
+			url:'setting.php',
+			type:'POST',
+			data:{
+				type:$(this).find('input').val(),
+				token:$('#token').val(),
+				files:files
+			},
+			success:function(data){
+				alert(data.Result);
+				location.reload();
+			},
+			error:function(e){
+				alert(e.responseText);
+				location.reload();
 			}
 
-			$.ajax({
-				url : $form.prop('action') ,
-				data : data ,
-				type: $form.prop('method') ,
-				success:function(data){
-					console.log('성공',data);
-					window.location.reload();
-					alert('다운로드 토큰이 설정되었습니다.');
-				},
-				error:function(e){
-					console.log('에러',e.responseText);
-				}
-			});
-
+		})
 	});
-
 
 	$ ( 'input[name="ckbAll"]' ).on ( "click" , function () {
 		 if ( $ ( this ).is ( ':checked' ) )
@@ -331,7 +261,11 @@ $ ( document ).ready ( function () {
 		form.delete('files[]');
 		form.append('files[]',fileSend);
 
-		var size = (fileSend.size/1024/1024/1024).toFixed(2);
+		for(var pair of form.entries()) {
+			console.log(pair[0]+ ', '+ pair[1]);
+		}
+
+//		var size = (fileSend.size/1024/1024/1024).toFixed(2);
 
 		$.ajax ( {
 			url : "<?= $AUTH::$filesUrl . $AUTH -> folderKey ?>" ,
@@ -363,7 +297,7 @@ $ ( document ).ready ( function () {
 				else
 				{
 					alert ('upload success');
-					window.location.reload() ;
+					location.reload() ;
 				}
 
 			} ,
@@ -439,7 +373,7 @@ $ ( document ).ready ( function () {
 				filesName : name ,
 				token : $ ( "#token" ) . val()
 			} ,
-			success : function ( data , status )
+			success : function ( data )
 			{
 				alert ( data ) ;
 				if ( data == "Files name update success" )
@@ -496,14 +430,6 @@ $ ( document ).ready ( function () {
 		} ) ;
 	} ) ;
 } ) ;
-
-
-
-
-
-
-
-
 
 </script>
 </html>

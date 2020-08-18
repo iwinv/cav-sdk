@@ -100,13 +100,45 @@ input[type='checkbox']{
 
 }
 .input-group{
+	width:35%;
 	padding-top:10px;
 	clear:both;
+	display:flex;
+	flex-direction:row;
+	justify-content:space-between;
+}
+.input-group > input{
+	width: 75% ;
+}
+.input-group > button , label {
+	width: 20% ;
 }
 
-.radio-group>label{
+.radio-group{
 	cursor:pointer;
 }
-.radio-group>input{
+.radio-group > label{
 	cursor:pointer;
+}
+
+.select{
+	display:flex;
+	flex-direction:row;
+	justify-content: space-evenly;
+}
+.select > .select-group{
+	width:30%;
+	border: 1px solid black;
+	border-radius: 10px;
+	text-align:center;
+	padding:1%;
+}
+.select > .select-group > select{
+	width:50%;
+	background: white;
+	text-align:center;
+	border: 1px solid black;
+	border-radius: 5px;
+	cursor:pointer;
+
 }

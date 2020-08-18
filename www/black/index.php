@@ -69,7 +69,7 @@ $black = $AUTH->blackSelect () ;
 				</div>
 			</p>
 			<div class="input-group">
-				<span></span> <input type="text" name="blackadd">
+				<input type="text" name="blackadd">
 				<button type="button" name="blackadd">추 가</button>
 			</div>
 		</div>
@@ -126,8 +126,7 @@ $black = $AUTH->blackSelect () ;
 				"token" : token
 			} ,
 			success: function(data){
-				console.log('성공',data);
-				alert(data);
+				alert(data.Result);
 				window.location.reload();
 			},
 			error: function(res){
@@ -154,12 +153,12 @@ $black = $AUTH->blackSelect () ;
 				"token" : token
 			} ,
 			success : function(data){
-				console.log('성공',data);
-				alert(data);
-				window.location.reload();
+				alert(data.Result);
+				location.reload();
 			},
-			error: function(res){
-				console.log('실패',res.responseText);
+			error: function(e){
+				alert(e.responseText);
+				location.reload();
 			}
 		})
 	});
