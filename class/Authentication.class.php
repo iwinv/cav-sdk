@@ -114,7 +114,6 @@ class Authentication
 	 */
 	public static function curl ( $url , $headers , $action , $postData = array () )
 	{
-		var_dump($url);
 		$curl = curl_init () ;
 		curl_setopt ( $curl , CURLOPT_URL , $url ) ;
 		curl_setopt ( $curl , CURLOPT_HTTPHEADER , $headers ) ;
@@ -136,9 +135,9 @@ class Authentication
 			curl_setopt ( $curl , CURLOPT_CUSTOMREQUEST , $action ) ;
 		$re = curl_exec ( $curl ) ;
 
-		echo '<pre>';
-		var_dump($re);
-		echo '</pre>';
+//		echo '<pre>';
+//		var_dump($re);
+//		echo '</pre>';
 
 		curl_close ( $curl ) ;
 		return $re ;
