@@ -135,6 +135,7 @@ class Authentication
 			curl_setopt ( $curl , CURLOPT_CUSTOMREQUEST , $action ) ;
 		$re = curl_exec ( $curl ) ;
 
+//		var_dump($url);
 //		echo '<pre>';
 //		var_dump($re);
 //		echo '</pre>';
@@ -334,20 +335,23 @@ class Authentication
 	 * 인코딩 소스 주소 요청
 	 * @param string $token 인증토큰
 	 * @param string $filesKey 파일 키
-	 * @param string $type 플레이어 포함 , 영상소스 , 썸네일 ( video , source , thumbnail )
+	 * @param string $type 플레이어 포함 , 영상소스 , 썸네일 ( token , source , thumbnail )
 	 * @return 요청 결과
 	 */
 	public function encodingVideoSelect ( $token = '' , $filesKey , $type )
 	{
 		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
-		if ( ! $_token )
-			return 'No token' ;
-
 		if ( ! $filesKey )
 			return 'No files key' ;
 
-		$headers[] = 'Authorization:' . $_token ;
-		$re = self::curl ( self::$encodingVideoUrl . $filesKey . '&type=' . $type , $headers , 'GET' ) ;
+		$re = self::curl ( self::$encodingVideoUrl . $type . '/' . $filesKey  , array() , 'GET' ) ;
+		if ( $type == 'token' )
+		{
+			if ( $re == strip_tags ( $re ) )
+				return FALSE ;
+			return $re ;
+		}
+
 		return $this -> returnMsg ( $re , __FUNCTION__ , $filesKey ) ; // $re -> url
 	}
 
@@ -369,6 +373,31 @@ class Authentication
 		$headers[] = 'Authorization:' . $_token ;
 		$re = self::curl ( self::$encodingFilesUrl . $filesKey , $headers , 'GET' ) ;
 		return $this -> returnMsg ( $re , __FUNCTION__ , $filesKey ) ; // $re -> url
+	}
+
+	/**
+	 * 디폴트 플레이 설정
+	 * @param string $token 인증토큰
+	 * @param string $fileKey 파일 키
+	 * @param string $encodeKey 인코딩 키
+	 * @param string $type 타입 ( pc , mobile )
+	 * @return array 인코딩 목록 정보 ( RequestID : 요청번호 ; encode : 인코딩 정보 ; Result : 결과 메시지 )
+	 */
+	public function encodingFileDefaultplayUpdate ( $token = '' , $fileKey , $encodeKey , $type )
+	{
+		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
+		if ( ! $fileKey )
+			return 'No file key' ;
+
+		if ( ! $encodeKey )
+			return 'No file key' ;
+
+		$headers[] = 'Authorization:' . $_token ;
+		$re = self::curl ( self::$encodingFilesUrl . $fileKey . '/' . $encodeKey . '/' . $type , $headers , 'PUT' ) ;
+		return $this -> returnMsg ( $re , __FUNCTION__ , $fileKey ) ; // $re -> url
 	}
 
 	/**

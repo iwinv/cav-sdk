@@ -114,11 +114,14 @@ $status = array
 			</form>
 		</div>
 		<div class="item">
+			<h3> 디폴트 플레이 설정 : </h3>
+			<button id="pc" class="default">pc 설정</button>
+			<button id="mobile" class="default">mobile 설정</button>
+		</div>
+		<div class="item">
 			<h3> 미리보기 : </h3>
 			<button href="player.php?filesKey=<?=$filesKey?>">플레이어</button>
 			<button href="source.php?filesKey=<?=$filesKey?>">영상 소스</button>
-			<button id="embed" >임베드 코드 복사</button>
-			<textarea hidden id="embed-text" cols="100" rows="2"><embed src="<?=$AUTH::$encodingVideoUrl . $filesKey . '&type=video'?>"  frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></embed></textarea>
 		</div>
 		<div class="item">
 			<h3>추가 인코딩 : </h3>
@@ -195,6 +198,40 @@ $status = array
 		var $encoding = $('#encoding');
 		var $upload = $('form[name=thumbnailUpload]') ;
 
+
+		$('.default').each(function(k,v){
+			$(v).click(function(){
+				var type = $(this).prop('id') ,
+					fileKey = $('#fileKey').val() ,
+					$checked = $list.find('input:checked:not([name=ckbAll])') ,
+					key = '';
+				if ( $checked.length != 1 )
+				{
+					alert('디폴트 플레이 설정할 화질을 하나만 선택하시기 바랍니다.');
+					return;
+				}
+
+				$checked.each(function(k,v){
+					key = $(v).val();
+				});
+
+				$.ajax({
+					url:'default.php',
+					type:'POST',
+					data: { type , key , fileKey } ,
+					success:function(data){
+						alert(data);
+						location.reload();
+					},
+					error:function(e){
+						alert(e.responseText);
+						location.reload();
+					}
+				});
+			});
+		});
+
+
 		$upload.find('button').click(function(){
 			var file = $upload.find('input[type=file]').get(0).files ;
 			if (file.length == 0)
@@ -227,20 +264,7 @@ $status = array
 			});
 		});
 
-		$('button#embed').click(function(){
-			if ( window.getSelection().empty )
-				window.getSelection().empty() ;
-			var tmp = document.createElement ( 'textarea' ) ;
-			document.body.appendChild(tmp);
-			tmp.value = $('#embed-text').val();
-			tmp.select();
-			document.execCommand('copy');
-			tmp.remove();
-			alert('복사되었습니다.');
-		});
-
 		$('button[href]').click(function(){
-			console.log('버튼')
 			location.href = $(this).attr('href') ;
 		});
 

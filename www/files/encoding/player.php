@@ -20,17 +20,11 @@ include_once INC . DIRECTORY_SEPARATOR . 'header.inc' ;
 
 
 /*
-* 인코딩 플레이어 url API : encoding video url select
+* 인코딩 video select API 플레이어 포함 : encoding video select
 */
-$re = $AUTH -> encodingVideoSelect ( $token , $filesKey , 'video' ) ;
-if ( $re )
-	if ( isset ( $re -> Error ) )
-		echo json_encode ( $re -> RequestID . ' : ' . $re -> Message , JSON_UNESCAPED_UNICODE ) ;
-	else if ( ! isset ( $re -> Result ) )
-		echo 'Encoding files create error' ;
-else
-	echo 'Encoding files create error' ;
-exit ;
+$re = $AUTH -> encodingVideoSelect ( $token , $filesKey , 'token' ) ;
 
+if ( ! $re )
+	exit ( 'Encoding video select error' ) ;
 
 echo $re;
