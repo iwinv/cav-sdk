@@ -120,6 +120,7 @@ class Authentication
 		curl_setopt ( $curl , CURLOPT_RETURNTRANSFER , true ) ;
 		curl_setopt ( $curl , CURLOPT_BINARYTRANSFER , true ) ;
 		curl_setopt ( $curl , CURLOPT_REFERER , $_SERVER['SERVER_NAME'] ) ; //client 서버 도메인
+
 		if ( $action == 'POST' )
 		{
 			$o = '' ;
@@ -328,19 +329,22 @@ class Authentication
 	}
 
 	/**
-	 * 인코딩 소스 주소 요청
+	 * 인코딩 플레이어 , 소스 요청
 	 * @param string $token 인증토큰
 	 * @param string $filesKey 파일 키
-	 * @param string $type 플레이어 포함 , 영상소스 , 썸네일 ( token , source , thumbnail )
+	 * @param string $type 플레이어 포함 , 영상소스 , 썸네일 ( token , list , thumbnail )
 	 * @return 요청 결과
 	 */
 	public function encodingVideoSelect ( $token = '' , $filesKey , $type )
 	{
 		$_token = $token ? $token : ($this -> token ? $this -> token : NULL ) ;
+		if ( ! $_token )
+			return 'No token' ;
+
 		if ( ! $filesKey )
 			return 'No files key' ;
 
-		$re = self::curl ( self::$encodingVideoUrl . $type . '/' . $filesKey  , array() , 'GET' ) ;
+		$re = self::curl ( self::$encodingVideoUrl . $type . '/' . $filesKey , array() , 'GET' ) ;
 		if ( $type == 'token' )
 		{
 			if ( $re == strip_tags ( $re ) )

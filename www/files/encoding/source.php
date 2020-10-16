@@ -11,9 +11,6 @@ $token = $AUTH -> token ;
 if ( ! $token )
 	exit ( 'No token' ) ;
 
-
-
-
 $title = '인코딩 영상 소스 리스트';
 
 include_once INC . DIRECTORY_SEPARATOR . 'header.inc' ;
@@ -53,9 +50,13 @@ if ( ! isset ( $re->list ) )
 
 	<div class="item">
 		<h3>video js</h3>
-		<video class="video-js" width="640" height="360" controls preload="metadata">
+		<video class="video-js" width="640" height="360" controls preload="metadata" crossorigin="anonymous">
 			<?php foreach ( $re->list as $quality => $url ) : ?>
+			<?php if ( $quality == 'original' ) : ?>
+			<source src="<?=$url?>" type="video/mp4" label="<?=$quality?>"></source>
+			<?php else : ?>
 			<source src="<?=$url?>" type="application/x-mpegURL" label="<?=$quality?>"></source>
+			<?php endif ; ?>
 			<?php endforeach ; ?>
 		</video>
 	</div>
